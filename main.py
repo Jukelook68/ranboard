@@ -10,21 +10,32 @@ import threading
 import sv_ttk
 import sys
 import pywinstyles
+import sounddevice as sd
+import soundfile as sf
 
 path = os.getenv('APPDATA') + "\\ranboard\\sounds\\"
 if not os.path.exists(path):
     os.makedirs(path)
 
 dir_list = os.listdir(path)
+loop = True
 maxclicks = 100
 triggerKey = "w"
+soundApi = "MME"
+
+options = {}
+for device in sd.query_devices():
+    if int(device["max_output_channels"]) > 0 and sd.query_hostapis()[device["hostapi"]]["name"] == soundApi:
+        options.update({str(device["name"]): int(device["index"])})
 
 #soundboard processes
 def run():
     global maxclicks
+    global loop
+    loop = True
     counter = 0
-    while True:
-        try:
+    while loop:
+        try: #check that the program is still running
             root.winfo_exists()
         except:
             print("Window closed, exiting")
@@ -34,54 +45,77 @@ def run():
         print(counter,"/",maxclicks)
         if counter == maxclicks:
             counter = 0
-            playsound.playsound(path+dir_list[random.randint(0,len(dir_list)-1)])
-#p1 = Process(target=run)
-
-#button funtions
-def kill():
-    root.destroy()
-
-def openSoundFolder():
-    os.startfile(path)
-
-def changeTriggerAmt():
-    global maxclicks
-    runTxt.focus() #removes focus from entry
-    try:
-        maxclicks = int(triggerEntry.get())
-        print(maxclicks)
-    except:
-        triggerEntry.delete(0,tk.END)
-        triggerEntry.insert(0,maxclicks)
+            data, samplerate = sf.read(path+dir_list[random.randint(0,len(dir_list)-1)], dtype='float32')
+            sd.play(data, samplerate, device=options[selectOutput.get()])
 
 #window settings
 root = tk.Tk()
 root.title('Ranboard')
-root.minsize(width=256,height=184)
+root.minsize(width=256,height=256)
 
-#layout
-runTxt = ttk.Label(root, text="Ranboard is running, "+ str(len(dir_list))+ " sounds detected")
-stopBtn = ttk.Button(root, text='Stop', width=25, command=kill)
+selectOutput = tk.StringVar()
 
-folderTxt = ttk.Label(root, text="Add sounds as mp3 files here:")
-folderBtn = ttk.Button(root, text='Open Folder', width=25, command=openSoundFolder)
+class layouts:
+    def mainScreen():
+        def kill():
+            global loop
+            root.destroy()
+            loop = False
 
-triggerTxt = ttk.Label(root, text="Number of clicks per sound:")
-triggerEntry = ttk.Entry(root)
-triggerEntry.insert(0,maxclicks)
-triggerSetBtn = ttk.Button(root, text='Set', width=10, command=changeTriggerAmt)
+        def openSoundFolder():
+            os.startfile(path)
 
+        def changeTriggerAmt():
+            global maxclicks
+            runTxt.focus() #removes focus from entry
+            try:
+                maxclicks = int(triggerEntry.get())
+                print(maxclicks)
+            except:
+                triggerEntry.delete(0,tk.END)
+                triggerEntry.insert(0,maxclicks)
+        
+        runTxt = ttk.Label(root, text="Ranboard is running, "+ str(len(dir_list))+ " sounds detected")
+        stopBtn = ttk.Button(root, text='Stop', width=25, command=kill)
 
-runTxt.pack()
-stopBtn.pack()
-folderTxt.pack()
-folderBtn.pack()
-triggerTxt.pack()
-triggerEntry.pack(side=tk.LEFT)
-triggerSetBtn.pack(side=tk.LEFT)
+        folderTxt = ttk.Label(root, text="Add sounds as mp3 files here:")
+        folderBtn = ttk.Button(root, text='Open Folder', width=25, command=openSoundFolder)
 
-#theming
-sv_ttk.use_dark_theme()
+        triggerTxt = ttk.Label(root, text="Number of clicks per sound:")
+        triggerEntry = ttk.Entry(root)
+        triggerEntry.insert(0,maxclicks)
+        triggerSetBtn = ttk.Button(root, text='Set', width=10, command=changeTriggerAmt)
+
+        soundOutput = ttk.OptionMenu(root, selectOutput, *options.keys())
+        selectOutput.set(sd.query_devices()[sd.default.device[1]]["name"])
+
+        runTxt.pack()
+        stopBtn.pack()
+        folderTxt.pack()
+        folderBtn.pack()
+        triggerTxt.pack()
+        triggerEntry.pack(side=tk.LEFT)
+        triggerSetBtn.pack(side=tk.LEFT)
+        soundOutput.pack()
+
+        #theming
+        sv_ttk.use_dark_theme()
+        apply_theme_to_titlebar(root)
+
+    def missingSounds():
+        def openSoundFolder():
+            os.startfile(path)
+
+        folderTxt = ttk.Label(root, text="No sound files detected, add sounds as\nmp3 files here and restart:",justify="center")
+        folderBtn = ttk.Button(root, text='Open Folder', width=25, command=openSoundFolder)
+
+        folderTxt.pack(pady=(50, 1))
+        folderBtn.pack()
+
+        #theming
+        sv_ttk.use_dark_theme()
+        apply_theme_to_titlebar(root)
+        
 def apply_theme_to_titlebar(root): #from theme docs
     version = sys.getwindowsversion()
 
@@ -95,10 +129,13 @@ def apply_theme_to_titlebar(root): #from theme docs
         root.wm_attributes("-alpha", 0.99)
         root.wm_attributes("-alpha", 1)
 
-# Example usage (replace `root` with the reference to your main/Toplevel window)
-apply_theme_to_titlebar(root)
-
 if __name__ == '__main__':
-    t1 = threading.Thread(target=run)
-    t1.start()
+    ##choosing layout
+    if len(dir_list) == 0:
+        layouts.missingSounds()
+    else:
+        layouts.mainScreen()
+        t1 = threading.Thread(target=run) #start sounds
+        t1.start()
+    
     root.mainloop()
