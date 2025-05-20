@@ -35,7 +35,7 @@ def run():
     loop = True
     counter = 0
     while loop:
-        try: #check that the program is still running
+        try: #fallback for loop, check that the program is still running
             root.winfo_exists()
         except:
             print("Window closed, exiting")
@@ -67,30 +67,37 @@ class layouts:
 
         def changeTriggerAmt():
             global maxclicks
-            runTxt.focus() #removes focus from entry
+            frame1.focus() #removes focus from entry
             try:
                 maxclicks = int(triggerEntry.get())
                 print(maxclicks)
             except:
                 triggerEntry.delete(0,tk.END)
                 triggerEntry.insert(0,maxclicks)
-        
-        runTxt = ttk.Label(root, text="Ranboard is running, "+ str(len(dir_list))+ " sounds detected")
-        stopBtn = ttk.Button(root, text='Stop', width=25, command=kill)
+        frame1 = ttk.LabelFrame(root,text="Ranboard")
+        stopBtn = ttk.Button(frame1, text='Stop', width=25, command=kill)
+        frame1.grid(column=0,row=0,columnspan=1,rowspan=1,padx=(20, 10), pady=(20, 10))
 
-        folderTxt = ttk.Label(root, text="Add sounds as mp3 files here:")
-        folderBtn = ttk.Button(root, text='Open Folder', width=25, command=openSoundFolder)
+        frame2 = ttk.LabelFrame(root,text="Sounds")
+        soundAmt = ttk.Label(frame2, text=str(len(dir_list))+ " sounds detected")
+        folderTxt = ttk.Label(frame2, text="Add sounds as mp3 files here:")
+        folderBtn = ttk.Button(frame2, text='Open Folder', width=25, command=openSoundFolder)
+        frame2.grid(column=0,row=1,columnspan=1,rowspan=1,padx=(20, 10), pady=(20, 10))
 
-        triggerTxt = ttk.Label(root, text="Number of clicks per sound:")
-        triggerEntry = ttk.Entry(root)
+        frame3 = ttk.LabelFrame(root,text="Triggering")
+        triggerTxt = ttk.Label(frame3, text="Number of clicks per sound:")
+        triggerEntry = ttk.Entry(frame3)
         triggerEntry.insert(0,maxclicks)
-        triggerSetBtn = ttk.Button(root, text='Set', width=10, command=changeTriggerAmt)
+        triggerSetBtn = ttk.Button(frame3, text='Set', width=10, command=changeTriggerAmt)
+        frame3.grid(column=0,row=2,columnspan=1,rowspan=1,padx=(20, 10), pady=(20, 10))
 
-        soundOutput = ttk.OptionMenu(root, selectOutput, *options.keys())
+        frame4 = ttk.LabelFrame(root,text="Sound Device")
+        soundOutput = ttk.OptionMenu(frame4, selectOutput, *options.keys())
         selectOutput.set(sd.query_devices()[sd.default.device[1]]["name"])
+        frame4.grid(column=0,row=3,columnspan=1,rowspan=1,padx=(20, 10), pady=(20, 10))
 
-        runTxt.pack()
         stopBtn.pack()
+        soundAmt.pack()
         folderTxt.pack()
         folderBtn.pack()
         triggerTxt.pack()
@@ -99,7 +106,8 @@ class layouts:
         soundOutput.pack()
 
         #theming
-        sv_ttk.use_dark_theme()
+        root.tk.call('source', 'forest-dark.tcl')
+        ttk.Style().theme_use('forest-dark')
         apply_theme_to_titlebar(root)
 
     def missingSounds():
@@ -113,17 +121,18 @@ class layouts:
         folderBtn.pack()
 
         #theming
-        sv_ttk.use_dark_theme()
+        root.tk.call('source', 'forest-dark.tcl')
+        ttk.Style().theme_use('forest-dark')
         apply_theme_to_titlebar(root)
         
-def apply_theme_to_titlebar(root): #from theme docs
+def apply_theme_to_titlebar(root):
     version = sys.getwindowsversion()
 
     if version.major == 10 and version.build >= 22000:
         # Set the title bar color to the background color on Windows 11 for better appearance
-        pywinstyles.change_header_color(root, "#1c1c1c" if sv_ttk.get_theme() == "dark" else "#fafafa")
+        pywinstyles.change_header_color(root, "#313131")
     elif version.major == 10:
-        pywinstyles.apply_style(root, "dark" if sv_ttk.get_theme() == "dark" else "normal")
+        pywinstyles.apply_style(root, "dark")
 
         # A hacky way to update the title bar's color on Windows 10 (it doesn't update instantly like on Windows 11)
         root.wm_attributes("-alpha", 0.99)
