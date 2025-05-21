@@ -5,6 +5,7 @@ import mouse
 import random
 import tkinter as tk
 from tkinter import ttk
+from PIL import ImageTk, Image
 from multiprocessing import Process
 import threading
 import sv_ttk
@@ -40,18 +41,21 @@ def run():
         except:
             print("Window closed, exiting")
             break
-        keyboard.wait(triggerKey)
-        counter += 1
-        print(counter,"/",maxclicks)
-        if counter == maxclicks:
-            counter = 0
-            data, samplerate = sf.read(path+dir_list[random.randint(0,len(dir_list)-1)], dtype='float32')
-            sd.play(data, samplerate, device=options[selectOutput.get()])
+        event = keyboard.read_event()
+        if event.event_type == keyboard.KEY_DOWN:
+            counter += 1
+            print(counter,"/",maxclicks)
+            if counter == maxclicks:
+                counter = 0
+                data, samplerate = sf.read(path+dir_list[random.randint(0,len(dir_list)-1)], dtype='float32')
+                sd.play(data, samplerate, device=options[selectOutput.get()])
+            
 
 #window settings
 root = tk.Tk()
 root.title('Ranboard')
-root.minsize(width=256,height=256)
+root.minsize(width=512,height=512)
+root.resizable(False,False)
 
 selectOutput = tk.StringVar()
 
@@ -74,36 +78,56 @@ class layouts:
             except:
                 triggerEntry.delete(0,tk.END)
                 triggerEntry.insert(0,maxclicks)
+        def test():
+            data, samplerate = sf.read(path+dir_list[random.randint(0,len(dir_list)-1)], dtype='float32')
+            sd.play(data, samplerate, device=options[selectOutput.get()])
+            
+        #main frame, stop button
         frame1 = ttk.LabelFrame(root,text="Ranboard")
-        stopBtn = ttk.Button(frame1, text='Stop', width=25, command=kill)
-        frame1.grid(column=0,row=0,columnspan=1,rowspan=1,padx=(20, 10), pady=(20, 10))
+        root.img = ImageTk.PhotoImage(Image.open("ranboard-short.png").resize((200,100)))
+        logo= tk.Label(frame1, image = root.img)
+        inFrame1 = ttk.Frame(frame1)
+        testButton = ttk.Button(inFrame1, text='Test', style='Accent.TButton', width=15, command=test)
+        stopBtn = ttk.Button(inFrame1, text='Stop', style='Accent.TButton', width=15, command=kill)
+        frame1.grid(column=0,row=0,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
 
+        #sounds and file button
         frame2 = ttk.LabelFrame(root,text="Sounds")
         soundAmt = ttk.Label(frame2, text=str(len(dir_list))+ " sounds detected")
         folderTxt = ttk.Label(frame2, text="Add sounds as mp3 files here:")
-        folderBtn = ttk.Button(frame2, text='Open Folder', width=25, command=openSoundFolder)
-        frame2.grid(column=0,row=1,columnspan=1,rowspan=1,padx=(20, 10), pady=(20, 10))
+        folderBtn = ttk.Button(frame2, text='Open Folder', style='Accent.TButton', width=25, command=openSoundFolder)
+        frame2.grid(column=0,row=1,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
 
-        frame3 = ttk.LabelFrame(root,text="Triggering")
-        triggerTxt = ttk.Label(frame3, text="Number of clicks per sound:")
-        triggerEntry = ttk.Entry(frame3)
+        #trigger settings
+        frame3 = ttk.LabelFrame(root,text="Trigger Settings")
+        triggerTxt = ttk.Label(frame3, text="Number of keyboard clicks per sound:")
+        inFrame3 = ttk.Frame(frame3)
+        triggerEntry = ttk.Entry(inFrame3)
         triggerEntry.insert(0,maxclicks)
-        triggerSetBtn = ttk.Button(frame3, text='Set', width=10, command=changeTriggerAmt)
-        frame3.grid(column=0,row=2,columnspan=1,rowspan=1,padx=(20, 10), pady=(20, 10))
+        triggerSetBtn = ttk.Button(inFrame3, text='Set', style='Accent.TButton', width=10, command=changeTriggerAmt)
+        frame3.grid(column=0,row=2,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
 
+        #device settings
         frame4 = ttk.LabelFrame(root,text="Sound Device")
         soundOutput = ttk.OptionMenu(frame4, selectOutput, *options.keys())
         selectOutput.set(sd.query_devices()[sd.default.device[1]]["name"])
-        frame4.grid(column=0,row=3,columnspan=1,rowspan=1,padx=(20, 10), pady=(20, 10))
+        frame4.grid(column=0,row=3,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
 
-        stopBtn.pack()
+        logo.pack()
+        inFrame1.pack()
+        testButton.pack(side="left",padx=5)
+        stopBtn.pack(side="left",padx=5)
         soundAmt.pack()
-        folderTxt.pack()
+        folderTxt.pack(pady=10)
         folderBtn.pack()
         triggerTxt.pack()
-        triggerEntry.pack(side=tk.LEFT)
-        triggerSetBtn.pack(side=tk.LEFT)
+        inFrame3.pack()
+        triggerEntry.pack(side="left")
+        triggerSetBtn.pack(side="left")
         soundOutput.pack()
+
+        root.grid_columnconfigure(0,weight=1,)
+        root.grid_rowconfigure(list(range(4)),weight=1)
 
         #theming
         root.tk.call('source', 'forest-dark.tcl')
