@@ -61,6 +61,7 @@ root = tk.Tk()
 root.title('Ranboard')
 root.minsize(width=512,height=512)
 root.resizable(False,False)
+root.iconbitmap(resource_path("Ranboard.ico"))
 
 selectOutput = tk.StringVar()
 
@@ -143,11 +144,16 @@ class layouts:
         def openSoundFolder():
             os.startfile(path)
 
-        folderTxt = ttk.Label(root, text="No sound files detected, add sounds as\nmp3 files here and restart:",justify="center")
-        folderBtn = ttk.Button(root, text='Open Folder', width=25, command=openSoundFolder)
+        frame2 = ttk.LabelFrame(root,text="Sounds")
+        folderTxt = ttk.Label(frame2, text="No sound files detected, add sounds as\nmp3 files here and restart:",justify="center")
+        folderBtn = ttk.Button(frame2, text='Open Folder', style='Accent.TButton', width=25, command=openSoundFolder)
+        frame2.grid(column=0,row=0,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
 
         folderTxt.pack(pady=(50, 1))
         folderBtn.pack()
+
+        root.grid_columnconfigure(0,weight=1,)
+        root.grid_rowconfigure(list(range(4)),weight=1)
 
         #theming
         root.tk.call('source', resource_path('forest-dark.tcl'))
