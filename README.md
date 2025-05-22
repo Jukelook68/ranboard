@@ -3,7 +3,7 @@
 
 A simple soundboard app which plays random sounds(not provided) at random times based on keystrokes.
 
-[Screenshot](screenshot.png)
+![Screenshot](screenshot.png)
 
 ## Missing features / TODO list
 
