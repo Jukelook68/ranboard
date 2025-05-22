@@ -1,14 +1,11 @@
 import os
-import playsound
 import keyboard
 import mouse
 import random
 import tkinter as tk
 from tkinter import ttk
 from PIL import ImageTk, Image
-from multiprocessing import Process
 import threading
-import sv_ttk
 import sys
 import pywinstyles
 import sounddevice as sd
@@ -17,6 +14,14 @@ import soundfile as sf
 path = os.getenv('APPDATA') + "\\ranboard\\sounds\\"
 if not os.path.exists(path):
     os.makedirs(path)
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 dir_list = os.listdir(path)
 loop = True
@@ -84,7 +89,7 @@ class layouts:
             
         #main frame, stop button
         frame1 = ttk.LabelFrame(root,text="Ranboard")
-        root.img = ImageTk.PhotoImage(Image.open("ranboard-short.png").resize((200,100)))
+        root.img = ImageTk.PhotoImage(Image.open(resource_path("ranboard-short.png")).resize((200,100)))
         logo= tk.Label(frame1, image = root.img)
         inFrame1 = ttk.Frame(frame1)
         testButton = ttk.Button(inFrame1, text='Test', style='Accent.TButton', width=15, command=test)
@@ -130,7 +135,7 @@ class layouts:
         root.grid_rowconfigure(list(range(4)),weight=1)
 
         #theming
-        root.tk.call('source', 'forest-dark.tcl')
+        root.tk.call('source', resource_path('forest-dark.tcl'))
         ttk.Style().theme_use('forest-dark')
         apply_theme_to_titlebar(root)
 
@@ -145,7 +150,7 @@ class layouts:
         folderBtn.pack()
 
         #theming
-        root.tk.call('source', 'forest-dark.tcl')
+        root.tk.call('source', resource_path('forest-dark.tcl'))
         ttk.Style().theme_use('forest-dark')
         apply_theme_to_titlebar(root)
         
@@ -163,6 +168,11 @@ def apply_theme_to_titlebar(root):
         root.wm_attributes("-alpha", 1)
 
 if __name__ == '__main__':
+    try:
+        import pyi_splash # type: ignore
+        pyi_splash.close()
+    except:
+        pass
     ##choosing layout
     if len(dir_list) == 0:
         layouts.missingSounds()
