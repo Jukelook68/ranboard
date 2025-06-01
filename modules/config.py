@@ -1,3 +1,5 @@
+import tkinter as tk
+
 class settings:
     def __init__(self):
         #settings
@@ -10,4 +12,5 @@ class globals:
     def __init__(self):
         self.path = ""
         self.dir_list = []
-        options = {}
+        self.options = {}
+        self.selectOutput = tk.StringVar()

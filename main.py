@@ -1,18 +1,14 @@
-#building yourself? use "python -m PyInstaller main.spec"
+#building yourself? use "PyInstaller main.spec"
 
 import os
-import keyboard
 import random
+import keyboard
 import tkinter as tk
-from tkinter import ttk
-from PIL import ImageTk, Image
 import threading
-import sys
-import pywinstyles
 import sounddevice as sd
 import soundfile as sf
 
-from modules.screenManager import MainScreen, SoundErrorScreen
+from modules.screenManager import MainScreen, SoundErrorScreen, resource_path
 from modules.config import settings, globals
 
 settings = settings()
@@ -20,14 +16,6 @@ settings = settings()
 globals.path = os.getenv('APPDATA') + "\\ranboard\\sounds\\"
 if not os.path.exists(globals.path):
     os.makedirs(globals.path)
-
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
 
 globals.dir_list = os.listdir(globals.path)
 loop = True
@@ -55,10 +43,10 @@ def run():
             if counter == settings.maxclicks:
                 counter = 0
                 data, samplerate = sf.read(globals.path+globals.dir_list[random.randint(0,len(globals.dir_list)-1)], dtype='float32')
-                sd.play(data, samplerate, device=globals.options[MainScreen.selectOutput.get()])
+                sd.play(data, samplerate, device=globals.options[globals.selectOutput.get()])
             
 
-#window settings
+#global window settings
 root = tk.Tk()
 root.title('Ranboard')
 root.minsize(width=512,height=512)
@@ -66,12 +54,14 @@ root.resizable(False,False)
 root.iconbitmap(resource_path("Ranboard.ico"))
 
 if __name__ == '__main__':
+    #attempt to close splash screen (import only exists in packaged form)
     try:
         import pyi_splash # type: ignore
         pyi_splash.close()
     except:
         pass
-    ##choosing layout
+
+    #choosing screen
     if len(globals.dir_list) == 0:
         SoundErrorScreen(root)
     else:

@@ -1,11 +1,11 @@
 import os
+import sys
 import random
 import tkinter as tk
 from tkinter import ttk
 from PIL import ImageTk, Image
 import sounddevice as sd
 import soundfile as sf
-import sys
 import pywinstyles
 
 from .config import settings, globals
@@ -40,7 +40,7 @@ class MainScreen:
         self.path = globals.path
         self.dir_list = globals.dir_list
         self.options = globals.options
-        self.selectOutput = tk.StringVar()
+        globals.selectOutput = tk.StringVar()
 
         self.frame1 = ttk.LabelFrame(self.root,text="Ranboard")
         self.root.img = ImageTk.PhotoImage(Image.open(resource_path("ranboard-short.png")).resize((200,100)))
@@ -68,8 +68,8 @@ class MainScreen:
 
         #device settings
         self.frame4 = ttk.LabelFrame(self.root,text="Sound Device")
-        self.soundOutput = ttk.OptionMenu(self.frame4, self.selectOutput, *self.options.keys())
-        self.selectOutput.set(sd.query_devices()[sd.default.device[1]]["name"])
+        self.soundOutput = ttk.OptionMenu(self.frame4, globals.selectOutput, *self.options.keys())
+        globals.selectOutput.set(sd.query_devices()[sd.default.device[1]]["name"])
         self.frame4.grid(column=0,row=3,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
 
         self.logo.pack()
@@ -110,7 +110,7 @@ class MainScreen:
             self.triggerEntry.insert(0,maxclicks)
     def test(self):
         data, samplerate = sf.read(self.path+self.dir_list[random.randint(0,len(self.dir_list)-1)], dtype='float32')
-        sd.play(data, samplerate, device=self.options[self.selectOutput.get()])
+        sd.play(data, samplerate, device=self.options[globals.selectOutput.get()])
 
 class SoundErrorScreen:
     def __init__(self, root):
