@@ -1,6 +1,7 @@
+#building yourself? use "python -m PyInstaller main.spec"
+
 import os
 import keyboard
-import mouse
 import random
 import tkinter as tk
 from tkinter import ttk
@@ -11,9 +12,14 @@ import pywinstyles
 import sounddevice as sd
 import soundfile as sf
 
-path = os.getenv('APPDATA') + "\\ranboard\\sounds\\"
-if not os.path.exists(path):
-    os.makedirs(path)
+from modules.screenManager import MainScreen, SoundErrorScreen
+from modules.config import settings, globals
+
+settings = settings()
+
+globals.path = os.getenv('APPDATA') + "\\ranboard\\sounds\\"
+if not os.path.exists(globals.path):
+    os.makedirs(globals.path)
 
 def resource_path(relative_path):
     try:
@@ -23,20 +29,16 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-dir_list = os.listdir(path)
+globals.dir_list = os.listdir(globals.path)
 loop = True
-maxclicks = 100
-triggerKey = "w"
-soundApi = "MME"
 
-options = {}
+globals.options = {}
 for device in sd.query_devices():
-    if int(device["max_output_channels"]) > 0 and sd.query_hostapis()[device["hostapi"]]["name"] == soundApi:
-        options.update({str(device["name"]): int(device["index"])})
+    if int(device["max_output_channels"]) > 0 and sd.query_hostapis()[device["hostapi"]]["name"] == settings.soundApi:
+        globals.options.update({str(device["name"]): int(device["index"])})
 
 #soundboard processes
 def run():
-    global maxclicks
     global loop
     loop = True
     counter = 0
@@ -49,11 +51,11 @@ def run():
         event = keyboard.read_event()
         if event.event_type == keyboard.KEY_DOWN:
             counter += 1
-            print(counter,"/",maxclicks)
-            if counter == maxclicks:
+            print(counter,"/",settings.maxclicks)
+            if counter == settings.maxclicks:
                 counter = 0
-                data, samplerate = sf.read(path+dir_list[random.randint(0,len(dir_list)-1)], dtype='float32')
-                sd.play(data, samplerate, device=options[selectOutput.get()])
+                data, samplerate = sf.read(globals.path+globals.dir_list[random.randint(0,len(globals.dir_list)-1)], dtype='float32')
+                sd.play(data, samplerate, device=globals.options[MainScreen.selectOutput.get()])
             
 
 #window settings
@@ -63,116 +65,6 @@ root.minsize(width=512,height=512)
 root.resizable(False,False)
 root.iconbitmap(resource_path("Ranboard.ico"))
 
-selectOutput = tk.StringVar()
-
-class layouts:
-    def mainScreen():
-        def kill():
-            global loop
-            root.destroy()
-            loop = False
-
-        def openSoundFolder():
-            os.startfile(path)
-
-        def changeTriggerAmt():
-            global maxclicks
-            frame1.focus() #removes focus from entry
-            try:
-                maxclicks = int(triggerEntry.get())
-                print(maxclicks)
-            except:
-                triggerEntry.delete(0,tk.END)
-                triggerEntry.insert(0,maxclicks)
-        def test():
-            data, samplerate = sf.read(path+dir_list[random.randint(0,len(dir_list)-1)], dtype='float32')
-            sd.play(data, samplerate, device=options[selectOutput.get()])
-            
-        #main frame, stop button
-        frame1 = ttk.LabelFrame(root,text="Ranboard")
-        root.img = ImageTk.PhotoImage(Image.open(resource_path("ranboard-short.png")).resize((200,100)))
-        logo= tk.Label(frame1, image = root.img)
-        inFrame1 = ttk.Frame(frame1)
-        testButton = ttk.Button(inFrame1, text='Test', style='Accent.TButton', width=15, command=test)
-        stopBtn = ttk.Button(inFrame1, text='Stop', style='Accent.TButton', width=15, command=kill)
-        frame1.grid(column=0,row=0,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
-
-        #sounds and file button
-        frame2 = ttk.LabelFrame(root,text="Sounds")
-        soundAmt = ttk.Label(frame2, text=str(len(dir_list))+ " sounds detected")
-        folderTxt = ttk.Label(frame2, text="Add sounds as mp3 files here:")
-        folderBtn = ttk.Button(frame2, text='Open Folder', style='Accent.TButton', width=25, command=openSoundFolder)
-        frame2.grid(column=0,row=1,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
-
-        #trigger settings
-        frame3 = ttk.LabelFrame(root,text="Trigger Settings")
-        triggerTxt = ttk.Label(frame3, text="Number of keyboard clicks per sound:")
-        inFrame3 = ttk.Frame(frame3)
-        triggerEntry = ttk.Entry(inFrame3)
-        triggerEntry.insert(0,maxclicks)
-        triggerSetBtn = ttk.Button(inFrame3, text='Set', style='Accent.TButton', width=10, command=changeTriggerAmt)
-        frame3.grid(column=0,row=2,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
-
-        #device settings
-        frame4 = ttk.LabelFrame(root,text="Sound Device")
-        soundOutput = ttk.OptionMenu(frame4, selectOutput, *options.keys())
-        selectOutput.set(sd.query_devices()[sd.default.device[1]]["name"])
-        frame4.grid(column=0,row=3,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
-
-        logo.pack()
-        inFrame1.pack()
-        testButton.pack(side="left",padx=5)
-        stopBtn.pack(side="left",padx=5)
-        soundAmt.pack()
-        folderTxt.pack(pady=10)
-        folderBtn.pack()
-        triggerTxt.pack()
-        inFrame3.pack()
-        triggerEntry.pack(side="left")
-        triggerSetBtn.pack(side="left")
-        soundOutput.pack()
-
-        root.grid_columnconfigure(0,weight=1,)
-        root.grid_rowconfigure(list(range(4)),weight=1)
-
-        #theming
-        root.tk.call('source', resource_path('forest-dark.tcl'))
-        ttk.Style().theme_use('forest-dark')
-        apply_theme_to_titlebar(root)
-
-    def missingSounds():
-        def openSoundFolder():
-            os.startfile(path)
-
-        frame2 = ttk.LabelFrame(root,text="Sounds")
-        folderTxt = ttk.Label(frame2, text="No sound files detected, add sounds as\nmp3 files here and restart:",justify="center")
-        folderBtn = ttk.Button(frame2, text='Open Folder', style='Accent.TButton', width=25, command=openSoundFolder)
-        frame2.grid(column=0,row=0,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
-
-        folderTxt.pack(pady=(50, 1))
-        folderBtn.pack()
-
-        root.grid_columnconfigure(0,weight=1,)
-        root.grid_rowconfigure(list(range(4)),weight=1)
-
-        #theming
-        root.tk.call('source', resource_path('forest-dark.tcl'))
-        ttk.Style().theme_use('forest-dark')
-        apply_theme_to_titlebar(root)
-        
-def apply_theme_to_titlebar(root):
-    version = sys.getwindowsversion()
-
-    if version.major == 10 and version.build >= 22000:
-        # Set the title bar color to the background color on Windows 11 for better appearance
-        pywinstyles.change_header_color(root, "#313131")
-    elif version.major == 10:
-        pywinstyles.apply_style(root, "dark")
-
-        # A hacky way to update the title bar's color on Windows 10 (it doesn't update instantly like on Windows 11)
-        root.wm_attributes("-alpha", 0.99)
-        root.wm_attributes("-alpha", 1)
-
 if __name__ == '__main__':
     try:
         import pyi_splash # type: ignore
@@ -180,10 +72,10 @@ if __name__ == '__main__':
     except:
         pass
     ##choosing layout
-    if len(dir_list) == 0:
-        layouts.missingSounds()
+    if len(globals.dir_list) == 0:
+        SoundErrorScreen(root)
     else:
-        layouts.mainScreen()
+        MainScreen(root)
         t1 = threading.Thread(target=run) #start sounds
         t1.start()
     

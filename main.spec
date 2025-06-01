@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('ranboard.ico','.'),('ranboard-short.png','.'),('forest-dark.tcl','.'),('forest-dark/*png','forest-dark')],
+    datas=[('ranboard.ico','.'),('ranboard-short.png','.'),('theme/forest-dark.tcl','theme'),('theme/forest-dark/*png','theme/forest-dark')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
