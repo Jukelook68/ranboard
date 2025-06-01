@@ -3,6 +3,8 @@
 
 A simple soundboard app which plays random sounds(not provided) at random times based on keystrokes.
 
+<img src=https://github.com/Jukelook68/ranboard/blob/bac535e1c853666c05e1e0feca0b8a00bdd767ac/screenshot.png width=25% />
+
 ## Missing features / TODO list
 
 - Settings do not currently save
