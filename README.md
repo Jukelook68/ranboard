@@ -16,4 +16,6 @@ This is just a quick project I made for a friend, do not expect this to be the b
 
 ## Licensing
 
-Feel free to modify and use this code(although its kinda messy), just don't claim it entirely as your own because it's not.
+Feel free to modify and use this code(although its kinda messy), just dont claim it entirely as your own because its not.
+
+The theme is not mine, credit goes to rdbende.
