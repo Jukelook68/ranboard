@@ -8,9 +8,7 @@ import sounddevice as sd
 import soundfile as sf
 import pywinstyles
 
-from .config import settings, globals
-
-settings = settings()
+from .config import *
 
 def resource_path(relative_path):
     try:
@@ -37,10 +35,10 @@ class MainScreen:
     #build screen layout
     def __init__(self, root):
         self.root = root
-        self.path = globals.path
-        self.dir_list = globals.dir_list
-        self.options = globals.options
-        globals.selectOutput = tk.StringVar()
+        self.soundPath = soundPath
+        self.soundList = soundList
+        self.deviceList = deviceList
+        self.selectedDeviceTK = tk.StringVar()
 
         self.frame1 = ttk.LabelFrame(self.root,text="Ranboard")
         self.root.img = ImageTk.PhotoImage(Image.open(resource_path("ranboard-short.png")).resize((200,100)))
@@ -52,7 +50,7 @@ class MainScreen:
 
         #sounds and file button
         self.frame2 = ttk.LabelFrame(self.root,text="Sounds")
-        self.soundAmt = ttk.Label(self.frame2, text=str(len(self.dir_list))+ " sounds detected")
+        self.soundAmt = ttk.Label(self.frame2, text=str(len(self.soundList))+ " sounds detected")
         self.folderTxt = ttk.Label(self.frame2, text="Add sounds as mp3 files here:")
         self.folderBtn = ttk.Button(self.frame2, text='Open Folder', style='Accent.TButton', width=25, command=self.openSoundFolder)
         self.frame2.grid(column=0,row=1,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
@@ -62,14 +60,15 @@ class MainScreen:
         self.triggerTxt = ttk.Label(self.frame3, text="Number of keyboard clicks per sound:")
         self.inFrame3 = ttk.Frame(self.frame3)
         self.triggerEntry = ttk.Entry(self.inFrame3)
-        self.triggerEntry.insert(0,settings.maxclicks)
+        self.triggerEntry.insert(0,settings["maxClicks"])
         self.triggerSetBtn = ttk.Button(self.inFrame3, text='Set', style='Accent.TButton', width=10, command=self.changeTriggerAmt)
         self.frame3.grid(column=0,row=2,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
 
         #device settings
         self.frame4 = ttk.LabelFrame(self.root,text="Sound Device")
-        self.soundOutput = ttk.OptionMenu(self.frame4, globals.selectOutput, *self.options.keys())
-        globals.selectOutput.set(sd.query_devices()[sd.default.device[1]]["name"])
+        self.soundOutput = ttk.OptionMenu(self.frame4, self.selectedDeviceTK, *self.deviceList.keys())
+        self.selectedDeviceTK.set(settings["currentDevice"])
+        self.selectedDeviceTK.trace_add("write", setDevice) #changes settings["currentDevice"]
         self.frame4.grid(column=0,row=3,columnspan=2,rowspan=1,padx=(20, 10), pady=(20, 10),sticky="nesw")
 
         self.logo.pack()
@@ -94,28 +93,29 @@ class MainScreen:
         apply_theme_to_titlebar(self.root)
     #button callbacks
     def kill(self):
+        save() #saves current settings
         global loop
         self.root.destroy()
         loop = False
     def openSoundFolder(self):
-        os.startfile(self.path)
+        os.startfile(self.soundPath)
     def changeTriggerAmt(self):
-        global maxclicks
         self.frame1.focus() #removes focus from entry
         try:
-            maxclicks = int(self.triggerEntry.get())
-            print(maxclicks)
+            settings["maxClicks"] = int(self.triggerEntry.get())
+            print(settings["maxClicks"])
         except:
             self.triggerEntry.delete(0,tk.END)
-            self.triggerEntry.insert(0,maxclicks)
+            self.triggerEntry.insert(0,settings["maxClicks"])
+        save()
     def test(self):
-        data, samplerate = sf.read(self.path+self.dir_list[random.randint(0,len(self.dir_list)-1)], dtype='float32')
-        sd.play(data, samplerate, device=self.options[globals.selectOutput.get()])
+        data, samplerate = sf.read(self.soundPath+self.soundList[random.randint(0,len(self.soundList)-1)], dtype='float32')
+        sd.play(data, samplerate, device=self.deviceList[settings["currentDevice"]])
 
 class SoundErrorScreen:
     def __init__(self, root):
         self.root = root
-        self.path = globals.path
+        self.path = soundPath
         self.frame2 = ttk.LabelFrame(self.root,text="Sounds")
         self.folderTxt = ttk.Label(self.frame2, text="No sound files detected, add sounds as\nmp3 files here and restart:",justify="center")
         self.folderBtn = ttk.Button(self.frame2, text='Open Folder', style='Accent.TButton', width=25, command=self.openSoundFolder)
@@ -133,4 +133,4 @@ class SoundErrorScreen:
         apply_theme_to_titlebar(self.root)
     
     def openSoundFolder(self):
-            os.startfile(globals.path)
+            os.startfile(soundPath)
