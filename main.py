@@ -9,21 +9,12 @@ import sounddevice as sd
 import soundfile as sf
 
 from modules.screenManager import MainScreen, SoundErrorScreen, resource_path
-from modules.config import settings, globals
+from modules.config import *
 
-settings = settings()
+if not os.path.exists(soundPath):
+    os.makedirs(soundPath)
 
-globals.path = os.getenv('APPDATA') + "\\ranboard\\sounds\\"
-if not os.path.exists(globals.path):
-    os.makedirs(globals.path)
-
-globals.dir_list = os.listdir(globals.path)
 loop = True
-
-globals.options = {}
-for device in sd.query_devices():
-    if int(device["max_output_channels"]) > 0 and sd.query_hostapis()[device["hostapi"]]["name"] == settings.soundApi:
-        globals.options.update({str(device["name"]): int(device["index"])})
 
 #soundboard processes
 def run():
@@ -39,15 +30,14 @@ def run():
         event = keyboard.read_event()
         if event.event_type == keyboard.KEY_DOWN:
             counter += 1
-            print(counter,"/",settings.maxclicks)
-            if counter == settings.maxclicks:
+            print(counter,"/",settings["maxClicks"])
+            if counter == settings["maxClicks"]:
                 counter = 0
-                data, samplerate = sf.read(globals.path+globals.dir_list[random.randint(0,len(globals.dir_list)-1)], dtype='float32')
-                sd.play(data, samplerate, device=globals.options[globals.selectOutput.get()])
+                data, samplerate = sf.read(soundPath+soundList[random.randint(0,len(soundList)-1)], dtype='float32')
+                sd.play(data, samplerate, device=deviceList[settings["currentDevice"]])
             
 
 #global window settings
-root = tk.Tk()
 root.title('Ranboard')
 root.minsize(width=512,height=512)
 root.resizable(False,False)
@@ -62,7 +52,7 @@ if __name__ == '__main__':
         pass
 
     #choosing screen
-    if len(globals.dir_list) == 0:
+    if len(soundList) == 0:
         SoundErrorScreen(root)
     else:
         MainScreen(root)
