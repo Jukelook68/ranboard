@@ -7,8 +7,7 @@ A simple soundboard app which plays random sounds(not provided) at random times 
 
 ## Missing features / TODO list
 
-- Settings do not currently save
-- No way to set 2 audio devices(hear audio and also send to virtual audio cable)
+- No way to set multiple audio devices(eg to hear on headphones and also play through microphone)
 
 ## Disclaimer
 
