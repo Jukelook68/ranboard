@@ -28,8 +28,12 @@ if not settingsPath.is_file():
 
 #loads saved settings
 with open(settingsPath, mode="r", encoding="utf-8") as file:
-    settings = json.load(file)    
+    settings = dict(json.load(file))
     file.close()
+
+    temp = defaults #preserves defaults
+    temp.update(settings) #matching variables will be replaced by settings, any missing will take defaults
+    settings = temp
 
 for device in sd.query_devices():
     if int(device["max_output_channels"]) > 0 and sd.query_hostapis()[device["hostapi"]]["name"] == settings["soundAPI"]:
